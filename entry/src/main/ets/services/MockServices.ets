@@ -1,98 +1,146 @@
-import { ServerItem, SftpNode, TerminalLine, UserSession } from '../models/AppModels';
+import {
+  ServerItem,
+  SftpNode,
+  TerminalLine,
+  TerminalLineType,
+  UserSession,
+  cloneServerItem,
+  cloneSftpNode,
+  cloneUserSession
+} from '../models/AppModels';
 
 export class MockAuthService {
-  private static session: UserSession = {
-    backendUrl: 'http://192.168.1.10:8080',
-    username: 'admin',
-    loggedIn: false
+  private static session: UserSession = MockAuthService.createDefaultSession()
+
+  private static createDefaultSession(): UserSession {
+    const session: UserSession = new UserSession()
+    session.backendUrl = 'http://192.168.1.10:8080'
+    session.username = 'admin'
+    session.loggedIn = false
+    return session
   }
 
   static getDefaultBackendUrl(): string {
-    return this.session.backendUrl
+    return MockAuthService.session.backendUrl
   }
 
   static login(backendUrl: string, username: string, _password: string): UserSession {
-    this.session = {
-      backendUrl: backendUrl.trim().length > 0 ? backendUrl.trim() : this.session.backendUrl,
-      username: username.trim().length > 0 ? username.trim() : 'admin',
-      loggedIn: true
-    }
-    return this.session
+    const nextSession: UserSession = new UserSession()
+    nextSession.backendUrl = backendUrl.trim().length > 0 ? backendUrl.trim() : MockAuthService.session.backendUrl
+    nextSession.username = username.trim().length > 0 ? username.trim() : 'admin'
+    nextSession.loggedIn = true
+    MockAuthService.session = nextSession
+    return cloneUserSession(MockAuthService.session)
   }
 
   static logout(): void {
-    this.session.loggedIn = false
+    MockAuthService.session.loggedIn = false
   }
 
   static getSession(): UserSession {
-    return this.session
+    return cloneUserSession(MockAuthService.session)
   }
 }
 
 export class MockServerService {
-  private static servers: ServerItem[] = [
-    {
-      id: '1',
-      name: '生产机 A',
-      host: '192.168.1.20',
-      port: 22,
-      username: 'root',
-      remark: '主业务节点'
-    },
-    {
-      id: '2',
-      name: '测试机 B',
-      host: '192.168.1.30',
-      port: 22,
-      username: 'dev',
-      remark: '功能验证环境'
-    }
-  ]
+  private static servers: ServerItem[] = MockServerService.createInitialServers()
+
+  private static createInitialServers(): ServerItem[] {
+    const items: ServerItem[] = []
+
+    const first: ServerItem = new ServerItem()
+    first.id = '1'
+    first.name = '生产机 A'
+    first.host = '192.168.1.20'
+    first.port = 22
+    first.username = 'root'
+    first.remark = '主业务节点'
+    items.push(first)
+
+    const second: ServerItem = new ServerItem()
+    second.id = '2'
+    second.name = '测试机 B'
+    second.host = '192.168.1.30'
+    second.port = 22
+    second.username = 'dev'
+    second.remark = '功能验证环境'
+    items.push(second)
+
+    return items
+  }
 
   static list(): ServerItem[] {
-    return this.servers.map(item => ({ ...item }))
+    const result: ServerItem[] = []
+    for (let i = 0; i < MockServerService.servers.length; i++) {
+      result.push(cloneServerItem(MockServerService.servers[i]))
+    }
+    return result
   }
 
   static getById(id: string): ServerItem | null {
-    const found = this.servers.find(item => item.id === id)
-    return found ? { ...found } : null
+    for (let i = 0; i < MockServerService.servers.length; i++) {
+      const item = MockServerService.servers[i]
+      if (item.id === id) {
+        return cloneServerItem(item)
+      }
+    }
+    return null
   }
 
   static createOrUpdate(server: ServerItem): void {
-    const index = this.servers.findIndex(item => item.id === server.id)
-    if (index >= 0) {
-      this.servers[index] = { ...server }
-      return
+    for (let i = 0; i < MockServerService.servers.length; i++) {
+      if (MockServerService.servers[i].id === server.id) {
+        MockServerService.servers[i] = cloneServerItem(server)
+        return
+      }
     }
-    this.servers.unshift({ ...server })
+    MockServerService.servers.unshift(cloneServerItem(server))
   }
 
   static createEmpty(): ServerItem {
-    return {
-      id: `${Date.now()}`,
-      name: '',
-      host: '',
-      port: 22,
-      username: '',
-      remark: ''
-    }
+    const item: ServerItem = new ServerItem()
+    item.id = Date.now().toString()
+    return item
   }
 }
 
 export class MockTerminalService {
   static createWelcomeLines(server: ServerItem | null): TerminalLine[] {
     const serverName = server ? server.name : '未选择服务器'
-    return [
-      { id: '1', type: 'info', content: `Connected to ${serverName} (Mock)` },
-      { id: '2', type: 'output', content: 'Welcome to HarmonySSH22 mock terminal.' },
-      { id: '3', type: 'output', content: 'Try: ls, pwd, whoami, cat /etc/hosts' }
-    ]
+    const lines: TerminalLine[] = []
+
+    const line1: TerminalLine = new TerminalLine()
+    line1.id = '1'
+    line1.type = TerminalLineType.Info
+    line1.content = 'Connected to ' + serverName + ' (Mock)'
+    lines.push(line1)
+
+    const line2: TerminalLine = new TerminalLine()
+    line2.id = '2'
+    line2.type = TerminalLineType.Output
+    line2.content = 'Welcome to HarmonySSH22 mock terminal.'
+    lines.push(line2)
+
+    const line3: TerminalLine = new TerminalLine()
+    line3.id = '3'
+    line3.type = TerminalLineType.Output
+    line3.content = 'Try: ls, pwd, whoami, cat /etc/hosts'
+    lines.push(line3)
+
+    return lines
   }
 
   static execute(command: string, sessionUser: string): TerminalLine[] {
     const trimmed = command.trim()
+    const lines: TerminalLine[] = []
+
     if (trimmed.length === 0) {
-      return [{ id: `${Date.now()}`, type: 'output', content: '' }]
+      const emptyLine: TerminalLine = new TerminalLine()
+      emptyLine.id = Date.now().toString()
+      emptyLine.type = TerminalLineType.Output
+      emptyLine.content = ''
+      lines.push(emptyLine)
+      return lines
     }
 
     let result = 'command not found (mock): ' + trimmed
@@ -106,79 +154,128 @@ export class MockTerminalService {
       result = '127.0.0.1 localhost\n192.168.1.20 prod-a\n192.168.1.30 test-b'
     }
 
-    return [
-      { id: `${Date.now()}-1`, type: 'command', content: `$ ${trimmed}` },
-      { id: `${Date.now()}-2`, type: 'output', content: result }
-    ]
+    const commandLine: TerminalLine = new TerminalLine()
+    commandLine.id = Date.now().toString() + '-1'
+    commandLine.type = TerminalLineType.Command
+    commandLine.content = '$ ' + trimmed
+    lines.push(commandLine)
+
+    const resultLine: TerminalLine = new TerminalLine()
+    resultLine.id = Date.now().toString() + '-2'
+    resultLine.type = TerminalLineType.Output
+    resultLine.content = result
+    lines.push(resultLine)
+
+    return lines
   }
 }
 
 export class MockSftpService {
-  private static tree: SftpNode = {
-    name: '/',
-    path: '/',
-    isDirectory: true,
-    children: [
-      {
-        name: 'home',
-        path: '/home',
-        isDirectory: true,
-        children: [
-          {
-            name: 'admin',
-            path: '/home/admin',
-            isDirectory: true,
-            children: [
-              { name: 'readme.txt', path: '/home/admin/readme.txt', isDirectory: false, size: '2 KB' },
-              { name: 'backup.zip', path: '/home/admin/backup.zip', isDirectory: false, size: '18 MB' }
-            ]
-          }
-        ]
-      },
-      {
-        name: 'var',
-        path: '/var',
-        isDirectory: true,
-        children: [
-          { name: 'log', path: '/var/log', isDirectory: true, children: [
-            { name: 'app.log', path: '/var/log/app.log', isDirectory: false, size: '320 KB' },
-            { name: 'error.log', path: '/var/log/error.log', isDirectory: false, size: '28 KB' }
-          ] }
-        ]
-      },
-      { name: 'etc', path: '/etc', isDirectory: true, children: [
-        { name: 'hosts', path: '/etc/hosts', isDirectory: false, size: '1 KB' }
-      ] }
-    ]
+  private static tree: SftpNode = MockSftpService.createTree()
+
+  private static createTree(): SftpNode {
+    const root: SftpNode = new SftpNode()
+    root.name = '/'
+    root.path = '/'
+    root.isDirectory = true
+
+    const home: SftpNode = new SftpNode()
+    home.name = 'home'
+    home.path = '/home'
+    home.isDirectory = true
+
+    const admin: SftpNode = new SftpNode()
+    admin.name = 'admin'
+    admin.path = '/home/admin'
+    admin.isDirectory = true
+
+    const readme: SftpNode = new SftpNode()
+    readme.name = 'readme.txt'
+    readme.path = '/home/admin/readme.txt'
+    readme.isDirectory = false
+    readme.size = '2 KB'
+
+    const backup: SftpNode = new SftpNode()
+    backup.name = 'backup.zip'
+    backup.path = '/home/admin/backup.zip'
+    backup.isDirectory = false
+    backup.size = '18 MB'
+
+    admin.children = [readme, backup]
+    home.children = [admin]
+
+    const varDir: SftpNode = new SftpNode()
+    varDir.name = 'var'
+    varDir.path = '/var'
+    varDir.isDirectory = true
+
+    const logDir: SftpNode = new SftpNode()
+    logDir.name = 'log'
+    logDir.path = '/var/log'
+    logDir.isDirectory = true
+
+    const appLog: SftpNode = new SftpNode()
+    appLog.name = 'app.log'
+    appLog.path = '/var/log/app.log'
+    appLog.isDirectory = false
+    appLog.size = '320 KB'
+
+    const errorLog: SftpNode = new SftpNode()
+    errorLog.name = 'error.log'
+    errorLog.path = '/var/log/error.log'
+    errorLog.isDirectory = false
+    errorLog.size = '28 KB'
+
+    logDir.children = [appLog, errorLog]
+    varDir.children = [logDir]
+
+    const etcDir: SftpNode = new SftpNode()
+    etcDir.name = 'etc'
+    etcDir.path = '/etc'
+    etcDir.isDirectory = true
+
+    const hosts: SftpNode = new SftpNode()
+    hosts.name = 'hosts'
+    hosts.path = '/etc/hosts'
+    hosts.isDirectory = false
+    hosts.size = '1 KB'
+
+    etcDir.children = [hosts]
+    root.children = [home, varDir, etcDir]
+    return root
   }
 
   static list(path: string): SftpNode[] {
-    const node = this.findNode(path, this.tree)
-    if (!node || !node.children) {
+    const node = MockSftpService.findNode(path, MockSftpService.tree)
+    if (node === null) {
       return []
     }
-    return node.children.map(item => ({ ...item, children: item.children ? [...item.children] : undefined }))
+    const result: SftpNode[] = []
+    for (let i = 0; i < node.children.length; i++) {
+      result.push(cloneSftpNode(node.children[i]))
+    }
+    return result
   }
 
   static goParent(path: string): string {
     if (path === '/' || path.length === 0) {
       return '/'
     }
-    const parts = path.split('/').filter(item => item.length > 0)
+    const parts = path.split('/').filter((item: string) => item.length > 0)
     parts.pop()
-    return parts.length === 0 ? '/' : '/' + parts.join('/')
+    if (parts.length === 0) {
+      return '/'
+    }
+    return '/' + parts.join('/')
   }
 
   private static findNode(path: string, current: SftpNode): SftpNode | null {
     if (current.path === path) {
       return current
     }
-    if (!current.children) {
-      return null
-    }
     for (let i = 0; i < current.children.length; i++) {
-      const result = this.findNode(path, current.children[i])
-      if (result) {
+      const result = MockSftpService.findNode(path, current.children[i])
+      if (result !== null) {
         return result
       }
     }

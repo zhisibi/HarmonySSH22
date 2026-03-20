@@ -1,8 +1,8 @@
 import { AppPage, ServerItem } from '../models/AppModels';
 
-export interface BottomTabItem {
-  page: AppPage
-  label: string
+export class BottomTabItem {
+  page: AppPage = AppPage.Home
+  label: string = ''
 }
 
 @Component
@@ -16,7 +16,7 @@ export struct PageHeader {
         .fontSize(26)
         .fontWeight(FontWeight.Bold)
         .fontColor('#ffffff')
-      if (this.subtitle && this.subtitle.length > 0) {
+      if (this.subtitle.length > 0) {
         Text(this.subtitle)
           .fontSize(13)
           .fontColor('#d1d5db')
@@ -31,18 +31,15 @@ export struct PageHeader {
 export struct SectionCard {
   title: string = ''
 
-  @Builder contentBuilder() {}
-
   build() {
     Column({ space: 14 }) {
-      if (this.title && this.title.length > 0) {
+      if (this.title.length > 0) {
         Text(this.title)
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
           .fontColor('#111827')
           .width('100%')
       }
-      this.contentBuilder()
     }
     .padding(16)
     .width('100%')
@@ -54,7 +51,7 @@ export struct SectionCard {
 @Component
 export struct ActionButton {
   text: string = ''
-  type: 'primary' | 'secondary' | 'danger' = 'primary'
+  type: string = 'primary'
   onPress: () => void = () => {}
 
   build() {
@@ -82,7 +79,7 @@ export struct FieldLabel {
 
 @Component
 export struct ServerListCard {
-  item: ServerItem = { id: '', name: '', host: '', port: 22, username: '' }
+  item: ServerItem = new ServerItem()
   onEdit: (server: ServerItem) => void = () => {}
   onTerminal: (server: ServerItem) => void = () => {}
   onSftp: (server: ServerItem) => void = () => {}
@@ -94,10 +91,10 @@ export struct ServerListCard {
           Text(this.item.name)
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
-          Text(`${this.item.username}@${this.item.host}:${this.item.port}`)
+          Text(this.item.username + '@' + this.item.host + ':' + this.item.port)
             .fontSize(13)
             .fontColor('#6b7280')
-          if (this.item.remark && this.item.remark.length > 0) {
+          if (this.item.remark.length > 0) {
             Text(this.item.remark)
               .fontSize(12)
               .fontColor('#9ca3af')
@@ -149,7 +146,7 @@ export struct BottomTabs {
         .layoutWeight(1)
         .padding({ top: 12, bottom: 12 })
         .onClick(() => this.onChange(item.page))
-      })
+      }, (item: BottomTabItem) => item.label)
     }
     .width('100%')
     .backgroundColor('#ffffff')
