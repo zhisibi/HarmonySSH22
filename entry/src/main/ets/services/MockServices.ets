@@ -240,7 +240,13 @@ export class MockSftpService {
     hosts.isDirectory = false
     hosts.size = '1 KB'
 
-    etcDir.children = [hosts]
+    const nginx: SftpNode = new SftpNode()
+    nginx.name = 'nginx.conf'
+    nginx.path = '/etc/nginx.conf'
+    nginx.isDirectory = false
+    nginx.size = '4 KB'
+
+    etcDir.children = [hosts, nginx]
     root.children = [home, varDir, etcDir]
     return root
   }
@@ -267,6 +273,115 @@ export class MockSftpService {
       return '/'
     }
     return '/' + parts.join('/')
+  }
+
+  static previewFile(path: string): string {
+    const node = MockSftpService.findNode(path, MockSftpService.tree)
+    if (node === null) {
+      return '文件不存在（Mock）'
+    }
+    if (node.isDirectory) {
+      return '这是目录，不能直接预览。'
+    }
+    if (path === '/etc/hosts') {
+      return '127.0.0.1 localhost\n192.168.1.20 prod-a\n192.168.1.30 test-b'
+    }
+    if (path === '/etc/nginx.conf') {
+      return 'server {\n  listen 80;\n  server_name mock.local;\n  location / {\n    proxy_pass http://127.0.0.1:8080;\n  }\n}'
+    }
+    if (path === '/var/log/app.log') {
+      return '[INFO] HarmonySSH22 mock started\n[INFO] polling completed\n[WARN] this is only a preview mock'
+    }
+    if (path === '/var/log/error.log') {
+      return '[ERROR] no real backend connected\n[INFO] mock mode keeps running'
+    }
+    return '预览内容（Mock）\n文件：' + node.name + '\n大小：' + node.size
+  }
+
+  static deleteNode(path: string): boolean {
+    if (path === '/') {
+      return false
+    }
+    const parent = MockSftpService.findParent(path, MockSftpService.tree)
+    if (parent === null) {
+      return false
+    }
+    const nextChildren: SftpNode[] = []
+    let removed = false
+    for (let i = 0; i < parent.children.length; i++) {
+      if (parent.children[i].path === path) {
+        removed = true
+      } else {
+        nextChildren.push(parent.children[i])
+      }
+    }
+    if (!removed) {
+      return false
+    }
+    parent.children = nextChildren
+    return true
+  }
+
+  static renameNode(path: string, nextName: string): string {
+    const node = MockSftpService.findNode(path, MockSftpService.tree)
+    if (node === null) {
+      return path
+    }
+    const trimmed = nextName.trim()
+    if (trimmed.length === 0) {
+      return node.path
+    }
+    const parentPath = MockSftpService.goParent(node.path)
+    node.name = trimmed
+    if (parentPath === '/') {
+      node.path = '/' + trimmed
+    } else {
+      node.path = parentPath + '/' + trimmed
+    }
+    MockSftpService.refreshChildrenPath(node)
+    return node.path
+  }
+
+  static downloadNode(path: string): string {
+    const node = MockSftpService.findNode(path, MockSftpService.tree)
+    if (node === null) {
+      return '下载失败：目标不存在（Mock）'
+    }
+    if (node.isDirectory) {
+      return '已打包下载目录：' + node.path + '（Mock ZIP）'
+    }
+    return '开始下载文件：' + node.path + '（Mock）'
+  }
+
+  static downloadBatch(paths: string[]): string {
+    if (paths.length === 0) {
+      return '请先选择文件或文件夹'
+    }
+    return '已打包下载 ' + paths.length.toString() + ' 个项目（Mock ZIP）'
+  }
+
+  private static refreshChildrenPath(node: SftpNode): void {
+    if (!node.isDirectory) {
+      return
+    }
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i]
+      child.path = node.path === '/' ? '/' + child.name : node.path + '/' + child.name
+      MockSftpService.refreshChildrenPath(child)
+    }
+  }
+
+  private static findParent(path: string, current: SftpNode): SftpNode | null {
+    for (let i = 0; i < current.children.length; i++) {
+      if (current.children[i].path === path) {
+        return current
+      }
+      const nested = MockSftpService.findParent(path, current.children[i])
+      if (nested !== null) {
+        return nested
+      }
+    }
+    return null
   }
 
   private static findNode(path: string, current: SftpNode): SftpNode | null {
