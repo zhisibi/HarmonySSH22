@@ -39,6 +39,10 @@ struct Index {
   @State sftpPreviewContent: string = '点击文件后，这里会显示预览内容。'
   @State sftpSelectedPaths: string[] = []
   @State sftpRenameInput: string = ''
+  @State sftpSearchText: string = ''
+  @State sftpQuickActionPath: string = ''
+  @State sftpMoreMenuPath: string = ''
+  @State sftpFabExpanded: boolean = false
 
   private bottomTabs: BottomTabItem[] = this.createBottomTabs()
 
@@ -129,81 +133,165 @@ struct Index {
 
   @Builder
   buildSftpLayout() {
-    Column({ space: 0 }) {
-      Column({ space: 12 }) {
-        PageHeader({ title: 'SFTP 文件管理', subtitle: '当前目录：' + this.currentSftpPath })
-        Text(this.sftpNotice)
-          .fontSize(13)
-          .fontColor('#6b7280')
+    Stack({ alignContent: Alignment.BottomEnd }) {
+      Column({ space: 0 }) {
+        Column({ space: 0 }) {
+          Row() {
+            Text('≡')
+              .width(24)
+              .fontSize(18)
+              .fontColor('#ffffff')
+              .textAlign(TextAlign.Center)
+              .onClick(() => {
+                this.sftpNotice = '服务器列表入口预留（Mock）'
+                this.sftpQuickActionPath = ''
+                this.sftpMoreMenuPath = ''
+              })
+            Text('FTP 文件管理')
+              .layoutWeight(1)
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#ffffff')
+              .textAlign(TextAlign.Center)
+            Text('⌕')
+              .width(24)
+              .fontSize(18)
+              .fontColor('#ffffff')
+              .textAlign(TextAlign.Center)
+              .onClick(() => {
+                this.sftpNotice = '顶部搜索入口已联动到下方搜索框（Mock）'
+              })
+          }
+          .height(56)
+          .padding({ left: 16, right: 16 })
           .width('100%')
-        Row({ space: 12 }) {
-          Button('回到首页')
+
+          Row({ space: 6 }) {
+            Text('●')
+              .fontSize(8)
+              .fontColor('#2ECC71')
+            Text('Connected to ' + this.getSftpConnectionHost())
+              .fontSize(12)
+              .fontColor('#d9ebff')
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 12 })
+        }
+        .width('100%')
+        .backgroundColor('#2F7FD8')
+
+        Column({ space: 12 }) {
+          Row({ space: 8 }) {
+            Text('⌂')
+              .fontSize(14)
+              .fontColor('#6b7280')
+            Text(this.buildSftpBreadcrumbText())
+              .layoutWeight(1)
+              .fontSize(14)
+              .fontColor('#374151')
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          .width('100%')
+          .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+          .backgroundColor('#ffffff')
+          .borderRadius(12)
+
+          Row({ space: 8 }) {
+            Text('⌕')
+              .fontSize(14)
+              .fontColor('#9ca3af')
+            TextInput({ text: this.sftpSearchText, placeholder: 'Search' })
+              .layoutWeight(1)
+              .height(40)
+              .fontSize(14)
+              .backgroundColor('#eef1f5')
+              .onChange((value: string) => {
+                this.sftpSearchText = value
+              })
+          }
+          .padding({ left: 12, right: 12 })
+          .height(44)
+          .width('100%')
+          .backgroundColor('#eef1f5')
+          .borderRadius(12)
+        }
+        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+        .width('100%')
+        .backgroundColor('#f4f6f8')
+
+        Stack({ alignContent: Alignment.BottomEnd }) {
+          Scroll() {
+            Column({ space: 10 }) {
+              this.buildSftpPage()
+            }
+            .padding({ left: 16, right: 16, top: 4, bottom: 92 })
+            .width('100%')
+            .alignItems(HorizontalAlign.Start)
+          }
+          .layoutWeight(1)
+          .scrollBar(BarState.Off)
+
+          if (this.sftpFabExpanded) {
+            Column({ space: 8 }) {
+              this.buildSftpFabAction('上传文件', () => {
+                this.sftpFabExpanded = false
+                this.sftpNotice = '已加入上传任务（Mock）'
+              })
+              this.buildSftpFabAction('新建文件夹', () => {
+                this.sftpFabExpanded = false
+                this.sftpNotice = '已创建文件夹 New Folder（Mock）'
+              })
+            }
+            .margin({ right: 20, bottom: 84 })
+          }
+
+          Button('+')
             .type(ButtonType.Capsule)
-            .layoutWeight(1)
-            .backgroundColor('#111827')
-            .onClick(() => this.currentPage = AppPage.Home)
-          Button('回到根目录')
-            .type(ButtonType.Capsule)
-            .layoutWeight(1)
-            .backgroundColor('#2563eb')
+            .width(56)
+            .height(56)
+            .fontSize(28)
+            .fontWeight(FontWeight.Medium)
+            .fontColor('#ffffff')
+            .backgroundColor('#2F7FD8')
+            .shadow({ radius: 16, color: '#332F7FD8', offsetX: 0, offsetY: 6 })
+            .margin({ right: 20, bottom: 18 })
             .onClick(() => {
-              this.currentSftpPath = '/'
-              this.sftpList = MockSftpService.list('/')
-              this.sftpSelectedPaths = []
-              this.sftpNotice = '已回到根目录（Mock）'
+              this.sftpFabExpanded = !this.sftpFabExpanded
+              this.sftpQuickActionPath = ''
+              this.sftpMoreMenuPath = ''
             })
         }
-      }
-      .padding({ left: 16, right: 16, top: 20, bottom: 12 })
-      .width('100%')
-      .backgroundColor('#f3f4f6')
-
-      Scroll() {
-        Column({ space: 12 }) {
-          this.buildSftpPage()
-        }
-        .padding({ left: 16, right: 16, top: 8, bottom: 20 })
+        .layoutWeight(1)
         .width('100%')
-        .alignItems(HorizontalAlign.Start)
-      }
-      .layoutWeight(1)
 
-      Column({ space: 12 }) {
-        Button(this.sftpSelectedPaths.length > 0 ? '批量打包下载（' + this.sftpSelectedPaths.length.toString() + '）' : '批量打包下载')
-          .type(ButtonType.Capsule)
-          .width('100%')
-          .height(44)
-          .fontColor('#ffffff')
-          .backgroundColor(this.sftpSelectedPaths.length > 0 ? '#059669' : '#9ca3af')
-          .enabled(this.sftpSelectedPaths.length > 0)
-          .onClick(() => {
-            this.sftpNotice = MockSftpService.downloadBatch(this.sftpSelectedPaths)
-          })
-        ActionButton({
-          text: '返回上级',
-          type: 'secondary',
-          onPress: () => {
-            this.currentSftpPath = MockSftpService.goParent(this.currentSftpPath)
-            this.sftpList = MockSftpService.list(this.currentSftpPath)
-            this.sftpSelectedPaths = []
-            this.sftpNotice = '已返回上级目录：' + this.currentSftpPath
+        BottomTabs({
+          currentPage: AppPage.Home,
+          tabs: this.bottomTabs,
+          onChange: (page: AppPage) => {
+            this.sftpFabExpanded = false
+            this.sftpQuickActionPath = ''
+            this.sftpMoreMenuPath = ''
+            this.currentPage = page
           }
         })
       }
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .width('100%')
-      .backgroundColor('#f3f4f6')
+      .height('100%')
 
-      BottomTabs({
-        currentPage: AppPage.Home,
-        tabs: this.bottomTabs,
-        onChange: (page: AppPage) => {
-          this.currentPage = page
-        }
-      })
+      if (this.sftpFabExpanded) {
+        Blank()
+          .width('100%')
+          .height('100%')
+          .backgroundColor('#4d000000')
+          .onClick(() => this.sftpFabExpanded = false)
+      }
     }
     .width('100%')
     .height('100%')
+    .backgroundColor('#f4f6f8')
   }
 
   @Builder
@@ -725,133 +813,161 @@ struct Index {
 
   @Builder
   buildSftpPage() {
-    Column({ space: 12 }) {
-      if (this.sftpList.length === 0) {
+    Column({ space: 10 }) {
+      if (this.sftpNotice.length > 0) {
+        Text(this.sftpNotice)
+          .fontSize(12)
+          .fontColor('#6b7280')
+          .width('100%')
+      }
+
+      if (this.getFilteredSftpList().length === 0) {
         Column({ space: 8 }) {
-          Text('当前目录为空')
+          Text(this.sftpSearchText.trim().length > 0 ? '没有匹配的文件' : '当前文件夹为空')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
             .fontColor('#111827')
-          Text('可以返回上级，或回到根目录继续浏览。')
+          Text(this.sftpSearchText.trim().length > 0 ? '试试更换关键词，或清空搜索继续浏览。' : '点击右下角 + 上传文件或新建文件夹。')
             .fontSize(14)
             .fontColor('#6b7280')
         }
         .padding(16)
         .width('100%')
         .backgroundColor('#ffffff')
-        .borderRadius(18)
+        .borderRadius(12)
         .alignItems(HorizontalAlign.Start)
       } else {
-        ForEach(this.sftpList, (item: SftpNode) => {
-          Column({ space: 12 }) {
-            Row({ space: 10 }) {
-              Checkbox({ name: item.path, group: 'sftp-select' })
-                .select(this.isSftpSelected(item.path))
-                .onChange((checked: boolean) => {
-                  this.toggleSftpSelection(item.path, checked)
-                })
+        ForEach(this.getFilteredSftpList(), (item: SftpNode) => {
+          Column({ space: 0 }) {
+            Row({ space: 12 }) {
+              Text(this.getSftpTypeIcon(item))
+                .width(28)
+                .fontSize(22)
+                .textAlign(TextAlign.Center)
 
               Column({ space: 4 }) {
-                Text((item.isDirectory ? '📁 ' : '📄 ') + item.name)
+                Text(item.name)
                   .fontSize(16)
                   .fontWeight(FontWeight.Medium)
-                  .fontColor('#111827')
-                Text(item.path + (item.size.length > 0 ? ' · ' + item.size : ''))
-                  .fontSize(12)
-                  .fontColor('#6b7280')
+                  .fontColor('#222222')
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text(this.getSftpMetaText(item))
+                  .fontSize(13)
+                  .fontColor('#888888')
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
               }
               .alignItems(HorizontalAlign.Start)
               .layoutWeight(1)
-              .onClick(() => {
-                if (item.isDirectory) {
-                  this.currentSftpPath = item.path
-                  this.sftpList = MockSftpService.list(item.path)
-                  this.sftpSelectedPaths = []
-                  this.sftpNotice = '已进入目录：' + item.path
-                } else {
-                  this.sftpPreviewTitle = item.name
-                  this.sftpPreviewContent = MockSftpService.previewFile(item.path)
-                  this.sftpNotice = '正在预览文件：' + item.path
-                }
-              })
-            }
+              .onClick(() => this.handleSftpItemPrimaryAction(item))
 
-            Row({ space: 8 }) {
-              Button(item.isDirectory ? '打开' : '预览')
-                .type(ButtonType.Capsule)
-                .fontSize(12)
-                .backgroundColor(item.isDirectory ? '#059669' : '#2563eb')
-                .onClick(() => {
-                  if (item.isDirectory) {
-                    this.currentSftpPath = item.path
-                    this.sftpList = MockSftpService.list(item.path)
-                    this.sftpSelectedPaths = []
-                    this.sftpNotice = '已进入目录：' + item.path
-                  } else {
-                    this.sftpPreviewTitle = item.name
-                    this.sftpPreviewContent = MockSftpService.previewFile(item.path)
-                    this.sftpNotice = '正在预览文件：' + item.path
-                  }
-                })
-              Button('重命名')
-                .type(ButtonType.Capsule)
-                .fontSize(12)
-                .backgroundColor('#7c3aed')
-                .onClick(() => {
+              if (this.sftpQuickActionPath === item.path) {
+                Row({ space: 6 }) {
+                  Button('下载')
+                    .type(ButtonType.Capsule)
+                    .height(34)
+                    .fontSize(12)
+                    .fontColor('#ffffff')
+                    .backgroundColor('#4b89dc')
+                    .onClick(() => {
+                      this.sftpNotice = MockSftpService.downloadNode(item.path)
+                      this.sftpMoreMenuPath = ''
+                    })
+                  Button('更多')
+                    .type(ButtonType.Capsule)
+                    .height(34)
+                    .fontSize(12)
+                    .fontColor('#ffffff')
+                    .backgroundColor('#4b89dc')
+                    .onClick(() => {
+                      this.sftpMoreMenuPath = this.sftpMoreMenuPath === item.path ? '' : item.path
+                    })
+                }
+              } else {
+                Column({ space: 4 }) {
+                  Text(this.getSftpMockTime(item))
+                    .fontSize(12)
+                    .fontColor('#888888')
+                    .textAlign(TextAlign.End)
+                    .maxLines(1)
+                  Button('···')
+                    .type(ButtonType.Capsule)
+                    .width(38)
+                    .height(30)
+                    .fontSize(12)
+                    .fontColor('#4b89dc')
+                    .backgroundColor('#edf4ff')
+                    .onClick(() => {
+                      this.sftpQuickActionPath = item.path
+                      this.sftpMoreMenuPath = ''
+                      this.sftpFabExpanded = false
+                    })
+                }
+                .alignItems(HorizontalAlign.End)
+              }
+            }
+            .width('100%')
+            .alignItems(VerticalAlign.Center)
+
+            if (this.sftpMoreMenuPath === item.path) {
+              Column({ space: 2 }) {
+                this.buildSftpMoreAction('重命名', () => {
                   const nextName = item.isDirectory ? item.name + '_copy' : 'renamed_' + item.name
-                  const nextPath = MockSftpService.renameNode(item.path, nextName)
-                  this.currentSftpPath = MockSftpService.goParent(nextPath) === this.currentSftpPath ? this.currentSftpPath : this.currentSftpPath
+                  MockSftpService.renameNode(item.path, nextName)
                   this.sftpList = MockSftpService.list(this.currentSftpPath)
-                  this.sftpNotice = '已重命名为：' + nextName + '（Mock）'
                   this.sftpRenameInput = nextName
+                  this.sftpNotice = '已重命名为：' + nextName + '（Mock）'
+                  this.sftpQuickActionPath = ''
+                  this.sftpMoreMenuPath = ''
                 })
-              Button(item.isDirectory ? '打包下载' : '下载')
-                .type(ButtonType.Capsule)
-                .fontSize(12)
-                .backgroundColor('#0f766e')
-                .onClick(() => {
-                  this.sftpNotice = MockSftpService.downloadNode(item.path)
+                this.buildSftpMoreAction('复制', () => {
+                  this.sftpNotice = '已复制 ' + item.name + '（Mock）'
+                  this.sftpQuickActionPath = ''
+                  this.sftpMoreMenuPath = ''
                 })
-              Button('删除')
-                .type(ButtonType.Capsule)
-                .fontSize(12)
-                .backgroundColor('#dc2626')
-                .onClick(() => {
+                this.buildSftpMoreAction('移动', () => {
+                  this.sftpNotice = '已移动 ' + item.name + '（Mock）'
+                  this.sftpQuickActionPath = ''
+                  this.sftpMoreMenuPath = ''
+                })
+                this.buildSftpMoreAction('删除', () => {
                   const deleted = MockSftpService.deleteNode(item.path)
                   this.sftpList = MockSftpService.list(this.currentSftpPath)
                   this.removeSftpSelection(item.path)
                   this.sftpNotice = deleted ? '已删除：' + item.name + '（Mock）' : '删除失败：' + item.name
+                  this.sftpQuickActionPath = ''
+                  this.sftpMoreMenuPath = ''
+                }, '#dc2626')
+                this.buildSftpMoreAction('属性', () => {
+                  this.sftpPreviewTitle = item.name + ' · 属性'
+                  this.sftpPreviewContent = '路径：' + item.path + '\n类型：' + (item.isDirectory ? '文件夹' : '文件') + '\n信息：' + this.getSftpMetaText(item)
+                  this.sftpNotice = '已查看属性（Mock）'
+                  this.sftpQuickActionPath = ''
+                  this.sftpMoreMenuPath = ''
                 })
+              }
+              .margin({ top: 8, left: 40 })
+              .padding({ top: 8, bottom: 8 })
+              .width(128)
+              .backgroundColor('#ffffff')
+              .borderRadius(10)
+              .shadow({ radius: 10, color: '#26000000', offsetX: 0, offsetY: 3 })
+              .alignItems(HorizontalAlign.Start)
             }
           }
           .padding(16)
           .width('100%')
           .backgroundColor('#ffffff')
-          .borderRadius(18)
+          .borderRadius(12)
+          .shadow({ radius: 6, color: '#12000000', offsetX: 0, offsetY: 2 })
+          .onClick(() => {
+            if (this.sftpMoreMenuPath !== item.path) {
+              this.sftpFabExpanded = false
+            }
+          })
         }, (item: SftpNode) => item.path)
       }
-
-      Column({ space: 8 }) {
-        Text('文件预览')
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#111827')
-          .width('100%')
-        Text(this.sftpPreviewTitle)
-          .fontSize(14)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#2563eb')
-          .width('100%')
-        Text(this.sftpPreviewContent)
-          .fontSize(13)
-          .fontColor('#374151')
-          .width('100%')
-      }
-      .padding(16)
-      .width('100%')
-      .backgroundColor('#ffffff')
-      .borderRadius(18)
-      .alignItems(HorizontalAlign.Start)
     }
     .width('100%')
   }
@@ -936,13 +1052,119 @@ struct Index {
     this.sftpSelectedPaths = next
   }
 
-  private isSftpSelected(path: string): boolean {
-    for (let i = 0; i < this.sftpSelectedPaths.length; i++) {
-      if (this.sftpSelectedPaths[i] === path) {
-        return true
+  @Builder
+  private buildSftpFabAction(text: string, action: () => void) {
+    Button(text)
+      .type(ButtonType.Capsule)
+      .height(38)
+      .fontSize(13)
+      .fontColor('#374151')
+      .backgroundColor('#ffffff')
+      .padding({ left: 16, right: 16 })
+      .shadow({ radius: 8, color: '#22000000', offsetX: 0, offsetY: 2 })
+      .onClick(() => action())
+  }
+
+  @Builder
+  private buildSftpMoreAction(text: string, action: () => void, color: string = '#374151') {
+    Text(text)
+      .fontSize(13)
+      .fontColor(color)
+      .width('100%')
+      .padding({ left: 14, right: 14, top: 10, bottom: 10 })
+      .onClick(() => action())
+  }
+
+  private getSftpConnectionHost(): string {
+    if (this.selectedServer !== null && this.selectedServer.host.trim().length > 0) {
+      return this.selectedServer.host
+    }
+    return 'server.ftp.example.com'
+  }
+
+  private buildSftpBreadcrumbText(): string {
+    if (this.currentSftpPath === '/') {
+      return '/'
+    }
+    return this.currentSftpPath + '/'
+  }
+
+  private getFilteredSftpList(): SftpNode[] {
+    const keyword = this.sftpSearchText.trim().toLowerCase()
+    if (keyword.length === 0) {
+      return this.sftpList
+    }
+    const result: SftpNode[] = []
+    for (let i = 0; i < this.sftpList.length; i++) {
+      if (this.sftpList[i].name.toLowerCase().indexOf(keyword) >= 0) {
+        result.push(this.sftpList[i])
       }
     }
-    return false
+    return result
+  }
+
+  private getSftpTypeIcon(item: SftpNode): string {
+    if (item.isDirectory) {
+      return '📁'
+    }
+    if (item.name.endsWith('.png') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg')) {
+      return '🖼️'
+    }
+    if (item.name.endsWith('.mp4') || item.name.endsWith('.mov')) {
+      return '🎬'
+    }
+    if (item.name.endsWith('.zip') || item.name.endsWith('.rar')) {
+      return '🗜️'
+    }
+    if (item.name.endsWith('.doc') || item.name.endsWith('.docx')) {
+      return '📄'
+    }
+    return '📄'
+  }
+
+  private getSftpMetaText(item: SftpNode): string {
+    if (item.isDirectory) {
+      return item.children.length.toString() + ' 个文件'
+    }
+    if (item.size.length > 0) {
+      return item.size
+    }
+    return '未知大小'
+  }
+
+  private getSftpMockTime(item: SftpNode): string {
+    if (item.isDirectory) {
+      return '2023-10-27 10:15'
+    }
+    if (item.name.endsWith('.doc') || item.name.endsWith('.docx')) {
+      return '2023-10-26 16:30'
+    }
+    if (item.name.endsWith('.png') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg')) {
+      return '2023-10-25 09:00'
+    }
+    if (item.name.endsWith('.mp4') || item.name.endsWith('.mov')) {
+      return '2023-10-24 14:20'
+    }
+    if (item.name.endsWith('.zip') || item.name.endsWith('.rar')) {
+      return '2023-10-23 11:45'
+    }
+    return '2023-10-22 08:30'
+  }
+
+  private handleSftpItemPrimaryAction(item: SftpNode): void {
+    this.sftpFabExpanded = false
+    this.sftpQuickActionPath = ''
+    this.sftpMoreMenuPath = ''
+    if (item.isDirectory) {
+      this.currentSftpPath = item.path
+      this.sftpList = MockSftpService.list(item.path)
+      this.sftpSelectedPaths = []
+      this.sftpNotice = '已进入目录：' + item.path
+      return
+    }
+    this.sftpPreviewTitle = item.name
+    this.sftpPreviewContent = MockSftpService.previewFile(item.path)
+    this.sftpNotice = '正在预览文件：' + item.path
   }
 
   @Builder
