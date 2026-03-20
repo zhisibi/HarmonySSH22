@@ -18,6 +18,11 @@ struct Index {
   @State backendUrl: string = MockAuthService.getDefaultBackendUrl()
   @State username: string = 'admin'
   @State password: string = '123456'
+  @State confirmPassword: string = '123456'
+  @State enableOtp: boolean = false
+  @State otpCode: string = ''
+  @State showConfirmPassword: boolean = false
+  @State loginMessage: string = ''
 
   @State servers: ServerItem[] = MockServerService.list()
   @State editingServer: ServerItem = MockServerService.createEmpty()
@@ -244,57 +249,164 @@ struct Index {
 
   @Builder
   buildLoginPage() {
-    Column({ space: 16 }) {
-      Blank().height(30)
-      PageHeader({ title: 'HarmonySSH22', subtitle: 'Mock 登录页 · 先保证能演示、能跳转、能扩展' })
-      Column({ space: 12 }) {
-        Text('连接信息')
+    Column({ space: 0 }) {
+      Row() {
+        Text('登录')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#111827')
+          .fontColor('#ffffff')
           .width('100%')
-
-        FieldLabel({ text: '后端地址' })
-        TextInput({ text: this.backendUrl, placeholder: '请输入后端地址' })
-          .onChange((value: string) => this.backendUrl = value)
-          .height(44)
-          .width('100%')
-          .backgroundColor('#f9fafb')
-          .borderRadius(12)
-
-        FieldLabel({ text: '用户名' })
-        TextInput({ text: this.username, placeholder: '请输入用户名' })
-          .onChange((value: string) => this.username = value)
-          .height(44)
-          .width('100%')
-          .backgroundColor('#f9fafb')
-          .borderRadius(12)
-
-        FieldLabel({ text: '密码' })
-        TextInput({ text: this.password, placeholder: '请输入密码' })
-          .type(InputType.Password)
-          .onChange((value: string) => this.password = value)
-          .height(44)
-          .width('100%')
-          .backgroundColor('#f9fafb')
-          .borderRadius(12)
+          .textAlign(TextAlign.Center)
       }
-      .padding(16)
+      .height(60)
       .width('100%')
-      .backgroundColor('#ffffff')
-      .borderRadius(18)
-      .alignItems(HorizontalAlign.Start)
+      .padding({ left: 16, right: 16 })
+      .backgroundColor('#2F7FD8')
 
-      ActionButton({
-        text: 'Mock 登录',
-        onPress: () => {
-          this.session = MockAuthService.login(this.backendUrl, this.username, this.password)
-          this.refreshServers()
-          this.currentPage = AppPage.Home
+      Scroll() {
+        Column({ space: 12 }) {
+          Text('后端地址')
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor('#333333')
+            .width('100%')
+
+          Row({ space: 8 }) {
+            TextInput({ text: this.backendUrl, placeholder: 'http://api.server.com' })
+              .layoutWeight(1)
+              .height(48)
+              .backgroundColor('#ffffff')
+              .borderRadius(12)
+              .border({ width: 1, color: '#dddddd' })
+              .padding({ left: 12, right: 12 })
+              .onChange((value: string) => this.backendUrl = value)
+            Button('🌐')
+              .type(ButtonType.Capsule)
+              .width(48)
+              .height(48)
+              .backgroundColor('#ffffff')
+              .border({ width: 1, color: '#dddddd' })
+              .fontColor('#6b7280')
+              .onClick(() => {
+                this.loginMessage = this.isValidBackendUrl(this.backendUrl) ? '后端地址格式正确（Mock）' : '后端地址格式不正确'
+              })
+          }
+
+          Row({ space: 8 }) {
+            Text('👤')
+              .fontSize(18)
+              .fontColor('#999999')
+            TextInput({ text: this.username, placeholder: '用户名' })
+              .layoutWeight(1)
+              .height(48)
+              .backgroundColor('#ffffff')
+              .borderRadius(12)
+              .onChange((value: string) => this.username = value)
+          }
+          .padding({ left: 12, right: 12 })
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(12)
+          .border({ width: 1, color: '#dddddd' })
+
+          Row({ space: 8 }) {
+            Text('🔒')
+              .fontSize(18)
+              .fontColor('#999999')
+            TextInput({ text: this.password, placeholder: '密码' })
+              .layoutWeight(1)
+              .height(48)
+              .type(InputType.Password)
+              .backgroundColor('#ffffff')
+              .borderRadius(12)
+              .onChange((value: string) => this.password = value)
+          }
+          .padding({ left: 12, right: 12 })
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(12)
+          .border({ width: 1, color: '#dddddd' })
+
+          Row({ space: 8 }) {
+            Text('🔒')
+              .fontSize(18)
+              .fontColor('#999999')
+            TextInput({ text: this.confirmPassword, placeholder: '密码' })
+              .layoutWeight(1)
+              .height(48)
+              .type(this.showConfirmPassword ? InputType.Normal : InputType.Password)
+              .backgroundColor('#ffffff')
+              .borderRadius(12)
+              .onChange((value: string) => this.confirmPassword = value)
+            Button(this.showConfirmPassword ? '👁' : '🙈')
+              .type(ButtonType.Capsule)
+              .width(42)
+              .height(42)
+              .backgroundColor('#ffffff')
+              .fontColor('#999999')
+              .onClick(() => this.showConfirmPassword = !this.showConfirmPassword)
+          }
+          .padding({ left: 12, right: 12 })
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(12)
+          .border({ width: 1, color: '#dddddd' })
+
+          Row({ space: 10 }) {
+            Checkbox()
+              .select(this.enableOtp)
+              .onChange((checked: boolean) => this.enableOtp = checked)
+            Text('二次验证码')
+              .fontSize(14)
+              .fontColor('#333333')
+          }
+          .width('100%')
+
+          Row({ space: 8 }) {
+            Text('🙈')
+              .fontSize(18)
+              .fontColor(this.enableOtp ? '#999999' : '#d1d5db')
+            TextInput({ text: this.otpCode, placeholder: '请输入6位验证码' })
+              .layoutWeight(1)
+              .height(48)
+              .enabled(this.enableOtp)
+              .type(InputType.Number)
+              .backgroundColor('#ffffff')
+              .borderRadius(12)
+              .opacity(this.enableOtp ? 1 : 0.6)
+              .onChange((value: string) => this.otpCode = value.replace(/[^0-9]/g, '').slice(0, 6))
+          }
+          .padding({ left: 12, right: 12 })
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(12)
+          .border({ width: 1, color: this.enableOtp ? '#dddddd' : '#e5e7eb' })
+
+          if (this.loginMessage.length > 0) {
+            Text(this.loginMessage)
+              .fontSize(12)
+              .fontColor(this.loginMessage.indexOf('成功') >= 0 || this.loginMessage.indexOf('正确') >= 0 ? '#2F7FD8' : '#E53935')
+              .width('100%')
+          }
+
+          Button('登录')
+            .type(ButtonType.Capsule)
+            .width('100%')
+            .height(48)
+            .backgroundColor('#2F7FD8')
+            .fontColor('#ffffff')
+            .fontSize(16)
+            .onClick(() => this.submitLogin())
         }
-      })
+        .padding({ left: 16, right: 16, top: 18, bottom: 24 })
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
+      .layoutWeight(1)
     }
     .width('100%')
+    .height('100%')
+    .backgroundColor('#F5F5F5')
   }
 
   @Builder
@@ -827,6 +939,38 @@ struct Index {
     this.terminalLines = merged
     this.terminalStatusMessage = '命令已执行（Mock）'
     this.terminalInput = ''
+  }
+
+  private isValidBackendUrl(url: string): boolean {
+    const trimmed = url.trim()
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://')
+  }
+
+  private submitLogin(): void {
+    if (!this.isValidBackendUrl(this.backendUrl)) {
+      this.loginMessage = '请输入正确的后端地址'
+      return
+    }
+    if (this.username.trim().length === 0) {
+      this.loginMessage = '用户名不能为空'
+      return
+    }
+    if (this.password.length < 6) {
+      this.loginMessage = '密码至少 6 位'
+      return
+    }
+    if (this.confirmPassword !== this.password) {
+      this.loginMessage = '两次输入的密码不一致'
+      return
+    }
+    if (this.enableOtp && this.otpCode.length !== 6) {
+      this.loginMessage = '请输入 6 位验证码'
+      return
+    }
+    this.loginMessage = '登录校验通过（Mock）'
+    this.session = MockAuthService.login(this.backendUrl, this.username, this.password)
+    this.refreshServers()
+    this.currentPage = AppPage.Home
   }
 
   private refreshServers(): void {
