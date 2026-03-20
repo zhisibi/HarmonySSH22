@@ -251,12 +251,16 @@ struct Index {
   buildLoginPage() {
     Column({ space: 0 }) {
       Row() {
+        Blank()
+          .width(24)
         Text('登录')
+          .layoutWeight(1)
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
           .fontColor('#ffffff')
-          .width('100%')
           .textAlign(TextAlign.Center)
+        Blank()
+          .width(24)
       }
       .height(60)
       .width('100%')
@@ -265,148 +269,209 @@ struct Index {
 
       Scroll() {
         Column({ space: 12 }) {
-          Text('后端地址')
-            .fontSize(14)
-            .fontWeight(FontWeight.Medium)
-            .fontColor('#333333')
+          Column({ space: 12 }) {
+            Text('后端地址')
+              .fontSize(14)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#333333')
+              .width('100%')
+
+            Row({ space: 8 }) {
+              TextInput({ text: this.backendUrl, placeholder: 'http://api.server.com' })
+                .layoutWeight(1)
+                .height(48)
+                .fontSize(15)
+                .backgroundColor('#ffffff')
+                .borderRadius(10)
+                .border({ width: 1, color: '#dddddd' })
+                .padding({ left: 12, right: 12 })
+                .onChange((value: string) => {
+                  this.backendUrl = value
+                  if (this.loginMessage.length > 0) {
+                    this.loginMessage = ''
+                  }
+                })
+              Button('◐')
+                .type(ButtonType.Capsule)
+                .width(42)
+                .height(42)
+                .backgroundColor('#ffffff')
+                .border({ width: 1, color: '#dddddd' })
+                .fontColor('#7b8794')
+                .fontSize(16)
+                .onClick(() => {
+                  this.loginMessage = this.isValidBackendUrl(this.backendUrl) ? '后端地址格式正确（Mock）' : '后端地址格式不正确'
+                })
+            }
             .width('100%')
 
-          Row({ space: 8 }) {
-            TextInput({ text: this.backendUrl, placeholder: 'http://api.server.com' })
-              .layoutWeight(1)
-              .height(48)
-              .backgroundColor('#ffffff')
-              .borderRadius(12)
-              .border({ width: 1, color: '#dddddd' })
-              .padding({ left: 12, right: 12 })
-              .onChange((value: string) => this.backendUrl = value)
-            Button('🌐')
-              .type(ButtonType.Capsule)
-              .width(48)
-              .height(48)
-              .backgroundColor('#ffffff')
-              .border({ width: 1, color: '#dddddd' })
-              .fontColor('#6b7280')
-              .onClick(() => {
-                this.loginMessage = this.isValidBackendUrl(this.backendUrl) ? '后端地址格式正确（Mock）' : '后端地址格式不正确'
-              })
-          }
-
-          Row({ space: 8 }) {
-            Text('👤')
-              .fontSize(18)
-              .fontColor('#999999')
-            TextInput({ text: this.username, placeholder: '用户名' })
-              .layoutWeight(1)
-              .height(48)
-              .backgroundColor('#ffffff')
-              .borderRadius(12)
-              .onChange((value: string) => this.username = value)
-          }
-          .padding({ left: 12, right: 12 })
-          .width('100%')
-          .backgroundColor('#ffffff')
-          .borderRadius(12)
-          .border({ width: 1, color: '#dddddd' })
-
-          Row({ space: 8 }) {
-            Text('🔒')
-              .fontSize(18)
-              .fontColor('#999999')
-            TextInput({ text: this.password, placeholder: '密码' })
-              .layoutWeight(1)
-              .height(48)
-              .type(InputType.Password)
-              .backgroundColor('#ffffff')
-              .borderRadius(12)
-              .onChange((value: string) => this.password = value)
-          }
-          .padding({ left: 12, right: 12 })
-          .width('100%')
-          .backgroundColor('#ffffff')
-          .borderRadius(12)
-          .border({ width: 1, color: '#dddddd' })
-
-          Row({ space: 8 }) {
-            Text('🔒')
-              .fontSize(18)
-              .fontColor('#999999')
-            TextInput({ text: this.confirmPassword, placeholder: '密码' })
-              .layoutWeight(1)
-              .height(48)
-              .type(this.showConfirmPassword ? InputType.Normal : InputType.Password)
-              .backgroundColor('#ffffff')
-              .borderRadius(12)
-              .onChange((value: string) => this.confirmPassword = value)
-            Button(this.showConfirmPassword ? '👁' : '🙈')
-              .type(ButtonType.Capsule)
-              .width(42)
-              .height(42)
-              .backgroundColor('#ffffff')
-              .fontColor('#999999')
-              .onClick(() => this.showConfirmPassword = !this.showConfirmPassword)
-          }
-          .padding({ left: 12, right: 12 })
-          .width('100%')
-          .backgroundColor('#ffffff')
-          .borderRadius(12)
-          .border({ width: 1, color: '#dddddd' })
-
-          Row({ space: 10 }) {
-            Checkbox()
-              .select(this.enableOtp)
-              .onChange((checked: boolean) => this.enableOtp = checked)
-            Text('二次验证码')
-              .fontSize(14)
-              .fontColor('#333333')
-          }
-          .width('100%')
-
-          Row({ space: 8 }) {
-            Text('🙈')
-              .fontSize(18)
-              .fontColor(this.enableOtp ? '#999999' : '#d1d5db')
-            TextInput({ text: this.otpCode, placeholder: '请输入6位验证码' })
-              .layoutWeight(1)
-              .height(48)
-              .enabled(this.enableOtp)
-              .type(InputType.Number)
-              .backgroundColor('#ffffff')
-              .borderRadius(12)
-              .opacity(this.enableOtp ? 1 : 0.6)
-              .onChange((value: string) => this.otpCode = value.replace(/[^0-9]/g, '').slice(0, 6))
-          }
-          .padding({ left: 12, right: 12 })
-          .width('100%')
-          .backgroundColor('#ffffff')
-          .borderRadius(12)
-          .border({ width: 1, color: this.enableOtp ? '#dddddd' : '#e5e7eb' })
-
-          if (this.loginMessage.length > 0) {
-            Text(this.loginMessage)
-              .fontSize(12)
-              .fontColor(this.loginMessage.indexOf('成功') >= 0 || this.loginMessage.indexOf('正确') >= 0 ? '#2F7FD8' : '#E53935')
-              .width('100%')
-          }
-
-          Button('登录')
-            .type(ButtonType.Capsule)
+            Row({ space: 10 }) {
+              Text('◉')
+                .width(18)
+                .textAlign(TextAlign.Center)
+                .fontSize(14)
+                .fontColor('#9aa0a6')
+              TextInput({ text: this.username, placeholder: '用户名' })
+                .layoutWeight(1)
+                .height(48)
+                .fontSize(15)
+                .backgroundColor('#ffffff')
+                .onChange((value: string) => {
+                  this.username = value
+                  if (this.loginMessage.length > 0) {
+                    this.loginMessage = ''
+                  }
+                })
+            }
+            .padding({ left: 12, right: 12 })
             .width('100%')
             .height(48)
-            .backgroundColor('#2F7FD8')
-            .fontColor('#ffffff')
-            .fontSize(16)
-            .onClick(() => this.submitLogin())
+            .backgroundColor('#ffffff')
+            .borderRadius(10)
+            .border({ width: 1, color: '#dddddd' })
+
+            Row({ space: 10 }) {
+              Text('■')
+                .width(18)
+                .textAlign(TextAlign.Center)
+                .fontSize(13)
+                .fontColor('#9aa0a6')
+              TextInput({ text: this.password, placeholder: '密码' })
+                .layoutWeight(1)
+                .height(48)
+                .fontSize(15)
+                .type(InputType.Password)
+                .backgroundColor('#ffffff')
+                .onChange((value: string) => {
+                  this.password = value
+                  if (this.loginMessage.length > 0) {
+                    this.loginMessage = ''
+                  }
+                })
+            }
+            .padding({ left: 12, right: 12 })
+            .width('100%')
+            .height(48)
+            .backgroundColor('#ffffff')
+            .borderRadius(10)
+            .border({ width: 1, color: '#dddddd' })
+
+            Row({ space: 10 }) {
+              Text('■')
+                .width(18)
+                .textAlign(TextAlign.Center)
+                .fontSize(13)
+                .fontColor('#9aa0a6')
+              TextInput({ text: this.confirmPassword, placeholder: '密码' })
+                .layoutWeight(1)
+                .height(48)
+                .fontSize(15)
+                .type(this.showConfirmPassword ? InputType.Normal : InputType.Password)
+                .backgroundColor('#ffffff')
+                .onChange((value: string) => {
+                  this.confirmPassword = value
+                  if (this.loginMessage.length > 0) {
+                    this.loginMessage = ''
+                  }
+                })
+              Button(this.showConfirmPassword ? '◉' : '◎')
+                .type(ButtonType.Capsule)
+                .width(34)
+                .height(34)
+                .backgroundColor('#ffffff')
+                .fontColor('#9aa0a6')
+                .fontSize(14)
+                .onClick(() => this.showConfirmPassword = !this.showConfirmPassword)
+            }
+            .padding({ left: 12, right: 12 })
+            .width('100%')
+            .height(48)
+            .backgroundColor('#ffffff')
+            .borderRadius(10)
+            .border({ width: 1, color: '#dddddd' })
+
+            Row({ space: 10 }) {
+              Checkbox()
+                .select(this.enableOtp)
+                .onChange((checked: boolean) => {
+                  this.enableOtp = checked
+                  if (!checked) {
+                    this.otpCode = ''
+                  }
+                  if (this.loginMessage.length > 0) {
+                    this.loginMessage = ''
+                  }
+                })
+              Text('二次验证码')
+                .fontSize(14)
+                .fontColor('#333333')
+            }
+            .width('100%')
+
+            Row({ space: 10 }) {
+              Text('⊘')
+                .width(18)
+                .textAlign(TextAlign.Center)
+                .fontSize(14)
+                .fontColor(this.enableOtp ? '#9aa0a6' : '#cfd4da')
+              TextInput({ text: this.otpCode, placeholder: '请输入6位验证码' })
+                .layoutWeight(1)
+                .height(48)
+                .fontSize(15)
+                .enabled(this.enableOtp)
+                .type(InputType.Number)
+                .backgroundColor('#ffffff')
+                .opacity(this.enableOtp ? 1 : 0.55)
+                .onChange((value: string) => {
+                  this.otpCode = value.replace(/[^0-9]/g, '').slice(0, 6)
+                  if (this.loginMessage.length > 0) {
+                    this.loginMessage = ''
+                  }
+                })
+            }
+            .padding({ left: 12, right: 12 })
+            .width('100%')
+            .height(48)
+            .backgroundColor('#ffffff')
+            .borderRadius(10)
+            .border({ width: 1, color: this.enableOtp ? '#dddddd' : '#e5e7eb' })
+            .opacity(this.enableOtp ? 1 : 0.75)
+
+            if (this.loginMessage.length > 0) {
+              Text(this.loginMessage)
+                .fontSize(12)
+                .fontColor(this.loginMessage.indexOf('正确') >= 0 || this.loginMessage.indexOf('通过') >= 0 ? '#2F7FD8' : '#E53935')
+                .width('100%')
+            }
+
+            Button('登录')
+              .type(ButtonType.Capsule)
+              .width('100%')
+              .height(48)
+              .backgroundColor('#4d9be6')
+              .fontColor('#ffffff')
+              .fontSize(17)
+              .fontWeight(FontWeight.Medium)
+              .margin({ top: 16 })
+              .shadow({ radius: 12, color: '#334d9be6', offsetX: 0, offsetY: 4 })
+              .onClick(() => this.submitLogin())
+          }
+          .padding({ left: 16, right: 16, top: 18, bottom: 22 })
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(18)
+          .alignItems(HorizontalAlign.Start)
         }
-        .padding({ left: 16, right: 16, top: 18, bottom: 24 })
+        .padding({ left: 16, right: 16, top: 16, bottom: 24 })
         .width('100%')
         .alignItems(HorizontalAlign.Start)
       }
       .layoutWeight(1)
+      .scrollBar(BarState.Off)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor('#eef1f5')
   }
 
   @Builder
