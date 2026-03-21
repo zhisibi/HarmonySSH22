@@ -8,7 +8,7 @@ import {
   cloneServerItem
 } from '../models/AppModels';
 import { MockAuthService, MockServerService, MockSftpService, MockTerminalService } from '../services/MockServices';
-import { ActionButton, BottomTabs, BottomTabItem, PageHeader, ServerListCard, FieldLabel } from '../components/Common';
+import { ActionButton, BottomTabs, BottomTabItem, PageHeader, FieldLabel } from '../components/Common';
 
 @Entry
 @Component
@@ -84,10 +84,16 @@ struct Index {
         this.buildTransferQueueLayout()
       } else if (this.currentPage === AppPage.Terminal) {
         this.buildTerminalPage()
+      } else if (this.currentPage === AppPage.Login) {
+        this.buildLoginPage()
       } else {
         Scroll() {
           Column({ space: 16 }) {
-            this.buildCurrentPage()
+            if (this.currentPage === AppPage.ServerForm) {
+              this.buildServerFormPage()
+            } else {
+              this.buildSettingsPage()
+            }
           }
           .padding({ left: 16, right: 16, top: 20, bottom: 20 })
           .width('100%')
@@ -95,7 +101,7 @@ struct Index {
         }
         .layoutWeight(1)
 
-        if (this.currentPage !== AppPage.Login && this.currentPage !== AppPage.ServerForm) {
+        if (this.currentPage !== AppPage.ServerForm) {
           BottomTabs({
             currentPage: this.currentPage,
             tabs: this.bottomTabs,
@@ -445,25 +451,6 @@ struct Index {
     .backgroundColor('#ffffff')
     .borderRadius(18)
     .alignItems(HorizontalAlign.Start)
-  }
-
-  @Builder
-  buildCurrentPage() {
-    if (this.currentPage === AppPage.Login) {
-      this.buildLoginPage()
-    } else if (this.currentPage === AppPage.Home) {
-      this.buildHomePage()
-    } else if (this.currentPage === AppPage.ServerForm) {
-      this.buildServerFormPage()
-    } else if (this.currentPage === AppPage.Terminal) {
-      this.buildTerminalPage()
-    } else if (this.currentPage === AppPage.Sftp) {
-      this.buildSftpPage()
-    } else if (this.currentPage === AppPage.TransferQueue) {
-      this.buildTransferQueuePage()
-    } else {
-      this.buildSettingsPage()
-    }
   }
 
   @Builder
