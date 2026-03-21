@@ -44,6 +44,10 @@ struct Index {
   @State sftpMoreMenuPath: string = ''
   @State sftpFabExpanded: boolean = false
   @State transferQueueNotice: string = '上传 / 下载任务队列为 Mock 展示'
+  @State settingsSearchText: string = ''
+  @State connectNotifyEnabled: boolean = true
+  @State transferNotifyEnabled: boolean = false
+  @State settingsNotice: string = '设置项跳转均为 Mock 占位'
 
   private bottomTabs: BottomTabItem[] = this.createBottomTabs()
 
@@ -1053,42 +1057,209 @@ struct Index {
 
   @Builder
   buildSettingsPage() {
-    Column({ space: 16 }) {
-      PageHeader({ title: '设置', subtitle: '本阶段全部为 Mock 交互' })
+    Column({ space: 0 }) {
+      Column({ space: 0 }) {
+        Row() {
+          Text('≡')
+            .width(24)
+            .fontSize(18)
+            .fontColor('#ffffff')
+            .textAlign(TextAlign.Center)
+            .onClick(() => {
+              this.settingsNotice = '服务器列表入口预留（Mock）'
+            })
+          Text('设置')
+            .layoutWeight(1)
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+            .fontColor('#ffffff')
+            .textAlign(TextAlign.Center)
+          Blank()
+            .width(24)
+        }
+        .height(56)
+        .padding({ left: 16, right: 16 })
+        .width('100%')
 
-      Column({ space: 12 }) {
-        Text('账号与数据')
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#111827')
-          .width('100%')
-        ActionButton({ text: '修改密码（Mock）', onPress: () => {} })
-        ActionButton({ text: '备份配置（Mock）', type: 'secondary', onPress: () => {} })
-        ActionButton({ text: '恢复配置（Mock）', type: 'secondary', onPress: () => {} })
+        Row({ space: 6 }) {
+          Text('⌂')
+            .fontSize(13)
+            .fontColor('#d9ebff')
+          Text('首页 > 我的设置')
+            .fontSize(12)
+            .fontColor('#d9ebff')
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, bottom: 12 })
       }
-      .padding(16)
       .width('100%')
-      .backgroundColor('#ffffff')
-      .borderRadius(18)
-      .alignItems(HorizontalAlign.Start)
+      .backgroundColor('#2F7FD8')
 
-      Column({ space: 8 }) {
-        Text('当前会话')
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#111827')
+      Scroll() {
+        Column({ space: 12 }) {
+          Row({ space: 8 }) {
+            Text('⌕')
+              .fontSize(14)
+              .fontColor('#9ca3af')
+            TextInput({ text: this.settingsSearchText, placeholder: '搜索设置' })
+              .layoutWeight(1)
+              .height(40)
+              .fontSize(14)
+              .backgroundColor('#eef1f5')
+              .onChange((value: string) => {
+                this.settingsSearchText = value
+              })
+          }
+          .padding({ left: 12, right: 12 })
+          .height(44)
           .width('100%')
-        Text('用户：' + this.session.username)
-          .fontSize(14)
-        Text('后端：' + this.session.backendUrl)
-          .fontSize(14)
-          .fontColor('#6b7280')
+          .backgroundColor('#eef1f5')
+          .borderRadius(18)
+
+          if (this.settingsNotice.length > 0) {
+            Text(this.settingsNotice)
+              .fontSize(12)
+              .fontColor('#6b7280')
+              .width('100%')
+          }
+
+          this.buildSettingsGroups()
+        }
+        .padding({ left: 16, right: 16, top: 16, bottom: 20 })
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
       }
-      .padding(16)
-      .width('100%')
-      .backgroundColor('#ffffff')
-      .borderRadius(18)
-      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor('#f4f5f7')
+  }
+
+  @Builder
+  private buildTransferQueuePage() {
+    Column({ space: 12 }) {
+      this.buildTransferQueueCard('下载', '/var/log/app.log', '进行中 · 64%', '#2F7FD8')
+      this.buildTransferQueueCard('上传', '/home/admin/release.zip', '等待中', '#f59e0b')
+      this.buildTransferQueueCard('下载', '/etc/nginx.conf', '已完成', '#10b981')
+    }
+    .width('100%')
+  }
+
+  @Builder
+  private buildSettingsGroups() {
+    Column({ space: 12 }) {
+      if (this.shouldShowSettingsGroup('个人资料', '帐户安全')) {
+        Column({ space: 8 }) {
+          Text('账户')
+            .fontSize(12)
+            .fontColor('#6b7280')
+            .width('100%')
+          Column({ space: 0 }) {
+            if (this.matchSettingsKeyword('个人资料')) {
+              this.buildSettingsArrowRow('个人资料', () => {
+                this.settingsNotice = '进入个人资料页面（Mock）'
+              })
+            }
+            if (this.matchSettingsKeyword('帐户安全')) {
+              this.buildSettingsArrowRow('帐户安全', () => {
+                this.settingsNotice = '进入帐户安全页面（Mock）'
+              })
+            }
+          }
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(14)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
+
+      if (this.shouldShowSettingsGroup('主题')) {
+        Column({ space: 8 }) {
+          Text('通用')
+            .fontSize(12)
+            .fontColor('#6b7280')
+            .width('100%')
+          Column({ space: 0 }) {
+            this.buildSettingsArrowRow('主题', () => {
+              this.settingsNotice = '进入主题设置页面（Mock）'
+            })
+          }
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(14)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
+
+      if (this.shouldShowSettingsGroup('身份验证方法')) {
+        Column({ space: 8 }) {
+          Text('SSH')
+            .fontSize(12)
+            .fontColor('#6b7280')
+            .width('100%')
+          Column({ space: 0 }) {
+            this.buildSettingsArrowRow('身份验证方法', () => {
+              this.settingsNotice = '进入 SSH 身份验证配置页面（Mock）'
+            })
+          }
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(14)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
+
+      if (this.shouldShowSettingsGroup('连接状态通知', '传输完成通知')) {
+        Column({ space: 8 }) {
+          Text('通知')
+            .fontSize(12)
+            .fontColor('#6b7280')
+            .width('100%')
+          Column({ space: 0 }) {
+            if (this.matchSettingsKeyword('连接状态通知')) {
+              this.buildSettingsSwitchRow('连接状态通知', this.connectNotifyEnabled, (value: boolean) => {
+                this.connectNotifyEnabled = value
+                this.settingsNotice = '连接状态通知已' + (value ? '开启' : '关闭') + '（Mock）'
+              })
+            }
+            if (this.matchSettingsKeyword('传输完成通知')) {
+              this.buildSettingsSwitchRow('传输完成通知', this.transferNotifyEnabled, (value: boolean) => {
+                this.transferNotifyEnabled = value
+                this.settingsNotice = '传输完成通知已' + (value ? '开启' : '关闭') + '（Mock）'
+              })
+            }
+          }
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(14)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
+
+      if (this.shouldShowSettingsGroup('版本')) {
+        Column({ space: 8 }) {
+          Text('关于')
+            .fontSize(12)
+            .fontColor('#6b7280')
+            .width('100%')
+          Column({ space: 0 }) {
+            this.buildSettingsInfoRow('版本', 'v1.9.0')
+          }
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(14)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
 
       ActionButton({
         text: '退出登录',
@@ -1104,12 +1275,51 @@ struct Index {
   }
 
   @Builder
-  private buildTransferQueuePage() {
-    Column({ space: 12 }) {
-      this.buildTransferQueueCard('下载', '/var/log/app.log', '进行中 · 64%', '#2F7FD8')
-      this.buildTransferQueueCard('上传', '/home/admin/release.zip', '等待中', '#f59e0b')
-      this.buildTransferQueueCard('下载', '/etc/nginx.conf', '已完成', '#10b981')
+  private buildSettingsArrowRow(title: string, action: () => void) {
+    Row() {
+      Text(title)
+        .fontSize(15)
+        .fontColor('#222222')
+        .layoutWeight(1)
+      Text('>')
+        .fontSize(14)
+        .fontColor('#9ca3af')
     }
+    .padding({ left: 16, right: 16, top: 15, bottom: 15 })
+    .width('100%')
+    .border({ width: { bottom: 1 }, color: '#eef0f3' })
+    .onClick(() => action())
+  }
+
+  @Builder
+  private buildSettingsSwitchRow(title: string, checked: boolean, action: (value: boolean) => void) {
+    Row() {
+      Text(title)
+        .fontSize(15)
+        .fontColor('#222222')
+        .layoutWeight(1)
+      Toggle({ type: ToggleType.Switch, isOn: checked })
+        .selectedColor('#2F7FD8')
+        .switchPointColor('#ffffff')
+        .onChange((value: boolean) => action(value))
+    }
+    .padding({ left: 16, right: 16, top: 13, bottom: 13 })
+    .width('100%')
+    .border({ width: { bottom: 1 }, color: '#eef0f3' })
+  }
+
+  @Builder
+  private buildSettingsInfoRow(title: string, value: string) {
+    Row() {
+      Text(title)
+        .fontSize(15)
+        .fontColor('#222222')
+        .layoutWeight(1)
+      Text(value)
+        .fontSize(14)
+        .fontColor('#6b7280')
+    }
+    .padding({ left: 16, right: 16, top: 15, bottom: 15 })
     .width('100%')
   }
 
@@ -1138,6 +1348,23 @@ struct Index {
     .width('100%')
     .backgroundColor('#ffffff')
     .borderRadius(12)
+  }
+
+  private shouldShowSettingsGroup(...items: string[]): boolean {
+    for (let i = 0; i < items.length; i++) {
+      if (this.matchSettingsKeyword(items[i])) {
+        return true
+      }
+    }
+    return false
+  }
+
+  private matchSettingsKeyword(text: string): boolean {
+    const keyword = this.settingsSearchText.trim().toLowerCase()
+    if (keyword.length === 0) {
+      return true
+    }
+    return text.toLowerCase().indexOf(keyword) >= 0
   }
 
   private toggleSftpSelection(path: string, checked: boolean): void {
