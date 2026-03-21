@@ -4,6 +4,7 @@ export enum AppPage {
   ServerForm = 'ServerForm',
   Terminal = 'Terminal',
   Sftp = 'Sftp',
+  TransferQueue = 'TransferQueue',
   Settings = 'Settings'
 }
 

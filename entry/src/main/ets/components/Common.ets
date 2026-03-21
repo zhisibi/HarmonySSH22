@@ -3,6 +3,7 @@ import { AppPage, ServerItem } from '../models/AppModels';
 export class BottomTabItem {
   page: AppPage = AppPage.Home
   label: string = ''
+  icon: string = ''
 }
 
 @Component
@@ -138,18 +139,24 @@ export struct BottomTabs {
     Row() {
       ForEach(this.tabs, (item: BottomTabItem) => {
         Column({ space: 4 }) {
+          if (item.icon.length > 0) {
+            Text(item.icon)
+              .fontSize(16)
+              .fontColor(this.currentPage === item.page ? '#2563eb' : '#9ca3af')
+          }
           Text(item.label)
-            .fontSize(13)
-            .fontWeight(this.currentPage === item.page ? FontWeight.Bold : FontWeight.Regular)
+            .fontSize(12)
+            .fontWeight(this.currentPage === item.page ? FontWeight.Medium : FontWeight.Regular)
             .fontColor(this.currentPage === item.page ? '#2563eb' : '#6b7280')
         }
         .layoutWeight(1)
-        .padding({ top: 12, bottom: 12 })
+        .justifyContent(FlexAlign.Center)
+        .padding({ top: 10, bottom: 10 })
         .onClick(() => this.onChange(item.page))
       }, (item: BottomTabItem) => item.label)
     }
     .width('100%')
     .backgroundColor('#ffffff')
-    .borderRadius({ topLeft: 20, topRight: 20 })
+    .border({ width: { top: 1 }, color: '#e5e7eb' })
   }
 }

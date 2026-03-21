@@ -43,19 +43,27 @@ struct Index {
   @State sftpQuickActionPath: string = ''
   @State sftpMoreMenuPath: string = ''
   @State sftpFabExpanded: boolean = false
+  @State transferQueueNotice: string = '上传 / 下载任务队列为 Mock 展示'
 
   private bottomTabs: BottomTabItem[] = this.createBottomTabs()
 
   private createBottomTabs(): BottomTabItem[] {
-    const homeTab: BottomTabItem = new BottomTabItem()
-    homeTab.page = AppPage.Home
-    homeTab.label = '首页'
+    const browseTab: BottomTabItem = new BottomTabItem()
+    browseTab.page = AppPage.Sftp
+    browseTab.label = '浏览'
+    browseTab.icon = '⌂'
+
+    const queueTab: BottomTabItem = new BottomTabItem()
+    queueTab.page = AppPage.TransferQueue
+    queueTab.label = '传输队列'
+    queueTab.icon = '⇅'
 
     const settingsTab: BottomTabItem = new BottomTabItem()
     settingsTab.page = AppPage.Settings
     settingsTab.label = '设置'
+    settingsTab.icon = '⚙'
 
-    return [homeTab, settingsTab]
+    return [browseTab, queueTab, settingsTab]
   }
 
   build() {
@@ -64,6 +72,8 @@ struct Index {
         this.buildHomeLayout()
       } else if (this.currentPage === AppPage.Sftp) {
         this.buildSftpLayout()
+      } else if (this.currentPage === AppPage.TransferQueue) {
+        this.buildTransferQueueLayout()
       } else if (this.currentPage === AppPage.Terminal) {
         this.buildTerminalPage()
       } else {
@@ -77,9 +87,9 @@ struct Index {
         }
         .layoutWeight(1)
 
-        if (this.currentPage !== AppPage.Login) {
+        if (this.currentPage !== AppPage.Login && this.currentPage !== AppPage.ServerForm) {
           BottomTabs({
-            currentPage: this.currentPage === AppPage.Settings ? AppPage.Settings : AppPage.Home,
+            currentPage: this.currentPage,
             tabs: this.bottomTabs,
             onChange: (page: AppPage) => {
               this.currentPage = page
@@ -123,7 +133,11 @@ struct Index {
         currentPage: AppPage.Home,
         tabs: this.bottomTabs,
         onChange: (page: AppPage) => {
-          this.currentPage = page
+          if (page === AppPage.Sftp || page === AppPage.TransferQueue || page === AppPage.Settings) {
+            this.currentPage = page
+            return
+          }
+          this.currentPage = AppPage.Home
         }
       })
     }
@@ -134,6 +148,14 @@ struct Index {
   @Builder
   buildSftpLayout() {
     Stack({ alignContent: Alignment.BottomEnd }) {
+      if (this.sftpFabExpanded) {
+        Blank()
+          .width('100%')
+          .height('100%')
+          .backgroundColor('#4d000000')
+          .onClick(() => this.sftpFabExpanded = false)
+      }
+
       Column({ space: 0 }) {
         Column({ space: 0 }) {
           Row() {
@@ -268,7 +290,7 @@ struct Index {
         .width('100%')
 
         BottomTabs({
-          currentPage: AppPage.Home,
+          currentPage: AppPage.Sftp,
           tabs: this.bottomTabs,
           onChange: (page: AppPage) => {
             this.sftpFabExpanded = false
@@ -280,14 +302,6 @@ struct Index {
       }
       .width('100%')
       .height('100%')
-
-      if (this.sftpFabExpanded) {
-        Blank()
-          .width('100%')
-          .height('100%')
-          .backgroundColor('#4d000000')
-          .onClick(() => this.sftpFabExpanded = false)
-      }
     }
     .width('100%')
     .height('100%')
@@ -330,6 +344,8 @@ struct Index {
       this.buildTerminalPage()
     } else if (this.currentPage === AppPage.Sftp) {
       this.buildSftpPage()
+    } else if (this.currentPage === AppPage.TransferQueue) {
+      this.buildTransferQueuePage()
     } else {
       this.buildSettingsPage()
     }
@@ -973,6 +989,69 @@ struct Index {
   }
 
   @Builder
+  buildTransferQueueLayout() {
+    Column({ space: 0 }) {
+      Row() {
+        Text('≡')
+          .width(24)
+          .fontSize(18)
+          .fontColor('#ffffff')
+          .textAlign(TextAlign.Center)
+          .onClick(() => {
+            this.transferQueueNotice = '侧边菜单入口预留（Mock）'
+          })
+        Text('传输队列')
+          .layoutWeight(1)
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#ffffff')
+          .textAlign(TextAlign.Center)
+        Text('⌕')
+          .width(24)
+          .fontSize(18)
+          .fontColor('#ffffff')
+          .textAlign(TextAlign.Center)
+          .onClick(() => {
+            this.transferQueueNotice = '当前为静态任务队列展示（Mock）'
+          })
+      }
+      .height(56)
+      .padding({ left: 16, right: 16 })
+      .width('100%')
+      .backgroundColor('#2F7FD8')
+
+      Scroll() {
+        Column({ space: 12 }) {
+          Text(this.transferQueueNotice)
+            .fontSize(12)
+            .fontColor('#6b7280')
+            .width('100%')
+
+          this.buildTransferQueueCard('下载', '/var/log/app.log', '进行中 · 64%', '#2F7FD8')
+          this.buildTransferQueueCard('上传', '/home/admin/release.zip', '等待中', '#f59e0b')
+          this.buildTransferQueueCard('下载', '/etc/nginx.conf', '已完成', '#10b981')
+        }
+        .padding({ left: 16, right: 16, top: 16, bottom: 20 })
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+      }
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+
+      BottomTabs({
+        currentPage: AppPage.TransferQueue,
+        tabs: this.bottomTabs,
+        onChange: (page: AppPage) => {
+          this.currentPage = page
+        }
+      })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor('#f4f6f8')
+  }
+
+  @Builder
   buildSettingsPage() {
     Column({ space: 16 }) {
       PageHeader({ title: '设置', subtitle: '本阶段全部为 Mock 交互' })
@@ -1022,6 +1101,43 @@ struct Index {
       })
     }
     .width('100%')
+  }
+
+  @Builder
+  private buildTransferQueuePage() {
+    Column({ space: 12 }) {
+      this.buildTransferQueueCard('下载', '/var/log/app.log', '进行中 · 64%', '#2F7FD8')
+      this.buildTransferQueueCard('上传', '/home/admin/release.zip', '等待中', '#f59e0b')
+      this.buildTransferQueueCard('下载', '/etc/nginx.conf', '已完成', '#10b981')
+    }
+    .width('100%')
+  }
+
+  @Builder
+  private buildTransferQueueCard(type: string, path: string, status: string, accentColor: string) {
+    Row({ space: 12 }) {
+      Column({ space: 4 }) {
+        Text(type)
+          .fontSize(12)
+          .fontColor(accentColor)
+          .fontWeight(FontWeight.Medium)
+        Text(path)
+          .fontSize(15)
+          .fontColor('#111827')
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start)
+
+      Text(status)
+        .fontSize(12)
+        .fontColor('#6b7280')
+    }
+    .padding(16)
+    .width('100%')
+    .backgroundColor('#ffffff')
+    .borderRadius(12)
   }
 
   private toggleSftpSelection(path: string, checked: boolean): void {
