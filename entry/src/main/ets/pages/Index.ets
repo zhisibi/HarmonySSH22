@@ -27,6 +27,10 @@ struct Index {
   @State servers: ServerItem[] = MockServerService.list()
   @State editingServer: ServerItem = MockServerService.createEmpty()
   @State selectedServer: ServerItem | null = null
+  @State serverSearchText: string = ''
+  @State serverExpandedId: string = ''
+  @State serverMoreMenuId: string = ''
+  @State serverManageNotice: string = '点击服务器右侧状态区域可展开 SSH / FTP / 更多'
 
   @State terminalInput: string = 'ls'
   @State terminalLines: TerminalLine[] = []
@@ -109,44 +113,151 @@ struct Index {
 
   @Builder
   buildHomeLayout() {
-    Column({ space: 0 }) {
-      Scroll() {
-        Column({ space: 16 }) {
-          this.buildHomePage()
-        }
-        .padding({ left: 16, right: 16, top: 20, bottom: 20 })
+    Stack({ alignContent: Alignment.Bottom }) {
+      Column()
         .width('100%')
-        .alignItems(HorizontalAlign.Start)
-      }
-      .layoutWeight(1)
-
-      Column({ space: 12 }) {
-        ActionButton({
-          text: '新增服务器',
-          onPress: () => {
-            this.editingServer = MockServerService.createEmpty()
-            this.currentPage = AppPage.ServerForm
-          }
+        .height('100%')
+        .backgroundColor('#f4f5f7')
+        .onClick(() => {
+          this.serverExpandedId = ''
+          this.serverMoreMenuId = ''
         })
-      }
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .width('100%')
-      .backgroundColor('#f3f4f6')
 
-      BottomTabs({
-        currentPage: AppPage.Home,
-        tabs: this.bottomTabs,
-        onChange: (page: AppPage) => {
-          if (page === AppPage.Sftp || page === AppPage.TransferQueue || page === AppPage.Settings) {
-            this.currentPage = page
-            return
+      Column({ space: 0 }) {
+        Column({ space: 0 }) {
+          Row() {
+            Text('≡')
+              .width(24)
+              .fontSize(18)
+              .fontColor('#ffffff')
+              .textAlign(TextAlign.Center)
+              .onClick(() => {
+                this.serverManageNotice = '侧边菜单入口预留（Mock）'
+              })
+            Text('服务器管理')
+              .layoutWeight(1)
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#ffffff')
+              .textAlign(TextAlign.Center)
+            Text('⌕')
+              .width(24)
+              .fontSize(18)
+              .fontColor('#ffffff')
+              .textAlign(TextAlign.Center)
+              .onClick(() => {
+                this.serverManageNotice = '顶部搜索已联动到下方搜索框（Mock）'
+              })
           }
-          this.currentPage = AppPage.Home
+          .height(56)
+          .padding({ left: 16, right: 16 })
+          .width('100%')
+          .backgroundColor('#2F7FD8')
         }
-      })
+
+        Column({ space: 12 }) {
+          Row({ space: 6 }) {
+            Text('⌂')
+              .fontSize(13)
+              .fontColor('#6b7280')
+            Text('我的服务器')
+              .fontSize(12)
+              .fontColor('#6b7280')
+          }
+          .width('100%')
+
+          Row({ space: 8 }) {
+            Text('⌕')
+              .fontSize(14)
+              .fontColor('#9ca3af')
+            TextInput({ text: this.serverSearchText, placeholder: '搜索服务器' })
+              .layoutWeight(1)
+              .height(40)
+              .fontSize(14)
+              .backgroundColor('#eef1f5')
+              .onChange((value: string) => {
+                this.serverSearchText = value
+              })
+          }
+          .padding({ left: 12, right: 12 })
+          .height(44)
+          .width('100%')
+          .backgroundColor('#eef1f5')
+          .borderRadius(18)
+        }
+        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+        .width('100%')
+        .backgroundColor('#f4f5f7')
+
+        Scroll() {
+          Column({ space: 12 }) {
+            this.buildHomePage()
+          }
+          .padding({ left: 16, right: 16, top: 4, bottom: 110 })
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+        }
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
+
+        Row() {
+          Column({ space: 4 }) {
+            Text('⌂')
+              .fontSize(16)
+              .fontColor('#2F7FD8')
+            Text('首页')
+              .fontSize(12)
+              .fontColor('#2F7FD8')
+          }
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+
+          Blank()
+            .layoutWeight(1)
+
+          Column({ space: 4 }) {
+            Text('⚙')
+              .fontSize(16)
+              .fontColor('#6b7280')
+            Text('设置')
+              .fontSize(12)
+              .fontColor('#6b7280')
+          }
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+          .onClick(() => {
+            this.serverExpandedId = ''
+            this.serverMoreMenuId = ''
+            this.currentPage = AppPage.Settings
+          })
+        }
+        .height(60)
+        .padding({ left: 12, right: 12, bottom: 8 })
+        .width('100%')
+        .backgroundColor('#ffffff')
+        .border({ width: { top: 1 }, color: '#e5e7eb' })
+      }
+      .width('100%')
+      .height('100%')
+
+      Button('+')
+        .type(ButtonType.Capsule)
+        .width(56)
+        .height(56)
+        .fontSize(28)
+        .fontWeight(FontWeight.Medium)
+        .fontColor('#ffffff')
+        .backgroundColor('#2F7FD8')
+        .shadow({ radius: 16, color: '#332F7FD8', offsetX: 0, offsetY: 6 })
+        .margin({ bottom: 34 })
+        .onClick(() => {
+          this.editingServer = MockServerService.createEmpty()
+          this.currentPage = AppPage.ServerForm
+        })
     }
     .width('100%')
     .height('100%')
+    .backgroundColor('#f4f5f7')
   }
 
   @Builder
@@ -584,49 +695,133 @@ struct Index {
 
   @Builder
   buildHomePage() {
-    Column({ space: 16 }) {
-      PageHeader({ title: '服务器列表', subtitle: this.session.username + ' · ' + this.session.backendUrl })
+    Column({ space: 12 }) {
+      if (this.serverManageNotice.length > 0) {
+        Text(this.serverManageNotice)
+          .fontSize(12)
+          .fontColor('#6b7280')
+          .width('100%')
+      }
 
-      if (this.servers.length === 0) {
+      if (this.getFilteredServers().length === 0) {
         Column({ space: 8 }) {
-          Text('还没有服务器')
-            .fontSize(20)
+          Text(this.serverSearchText.trim().length > 0 ? '没有匹配的服务器' : '还没有服务器')
+            .fontSize(18)
             .fontWeight(FontWeight.Medium)
             .fontColor('#111827')
-          Text('点击底部固定按钮新增第一台服务器')
+          Text(this.serverSearchText.trim().length > 0 ? '试试更换关键词，或清空搜索。' : '点击底部 + 按钮新增第一台服务器')
             .fontSize(14)
             .fontColor('#6b7280')
         }
-        .padding(20)
+        .padding(16)
         .width('100%')
         .backgroundColor('#ffffff')
-        .borderRadius(18)
+        .borderRadius(12)
         .alignItems(HorizontalAlign.Start)
       } else {
-        ForEach(this.servers, (item: ServerItem) => {
-          ServerListCard({
-            item: item,
-            onEdit: (server: ServerItem) => {
-              this.editingServer = cloneServerItem(server)
-              this.currentPage = AppPage.ServerForm
-            },
-            onTerminal: (server: ServerItem) => {
-              this.selectedServer = cloneServerItem(server)
-              this.terminalLines = MockTerminalService.createWelcomeLines(server)
-              this.terminalStatusMessage = '在线测试'
-              this.currentPage = AppPage.Terminal
-            },
-            onSftp: (server: ServerItem) => {
-              this.selectedServer = cloneServerItem(server)
-              this.currentSftpPath = '/'
-              this.sftpList = MockSftpService.list('/')
-              this.sftpSelectedPaths = []
-              this.sftpPreviewTitle = '未选择文件'
-              this.sftpPreviewContent = '点击文件后，这里会显示预览内容。'
-              this.sftpNotice = '点击文件夹直接进入，点击文件预览（Mock）'
-              this.currentPage = AppPage.Sftp
+        ForEach(this.getFilteredServers(), (item: ServerItem) => {
+          Column({ space: 0 }) {
+            Row({ space: 12 }) {
+              Text('🖥')
+                .width(28)
+                .fontSize(22)
+                .textAlign(TextAlign.Center)
+
+              Column({ space: 4 }) {
+                Text(item.name)
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor('#222222')
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text('SSH / FTP')
+                  .fontSize(13)
+                  .fontColor('#888888')
+              }
+              .layoutWeight(1)
+              .alignItems(HorizontalAlign.Start)
+              .onClick(() => {
+                this.serverExpandedId = this.serverExpandedId === item.id ? '' : item.id
+                this.serverMoreMenuId = ''
+              })
+
+              if (this.serverExpandedId === item.id) {
+                Row({ space: 6 }) {
+                  Column({ space: 4 }) {
+                    Text('SSH')
+                      .fontSize(13)
+                      .fontColor('#ffffff')
+                      .onClick(() => this.openServerTerminal(item))
+                    Text('FTP')
+                      .fontSize(13)
+                      .fontColor('#ffffff')
+                      .onClick(() => this.openServerSftp(item))
+                  }
+                  .width(44)
+
+                  Button('更多')
+                    .type(ButtonType.Capsule)
+                    .height(34)
+                    .fontSize(12)
+                    .fontColor('#ffffff')
+                    .backgroundColor('#356fbf')
+                    .onClick(() => {
+                      this.serverMoreMenuId = this.serverMoreMenuId === item.id ? '' : item.id
+                    })
+                }
+                .padding({ left: 10, right: 10, top: 8, bottom: 8 })
+                .backgroundColor('#2668B5')
+                .borderRadius(12)
+              } else {
+                Row({ space: 6 }) {
+                  Text('●')
+                    .fontSize(9)
+                    .fontColor('#2ECC71')
+                  Text('在线')
+                    .fontSize(13)
+                    .fontColor('#4b5563')
+                }
+                .padding({ left: 10, right: 10, top: 8, bottom: 8 })
+                .backgroundColor('#f3f4f6')
+                .borderRadius(12)
+                .onClick(() => {
+                  this.serverExpandedId = this.serverExpandedId === item.id ? '' : item.id
+                  this.serverMoreMenuId = ''
+                })
+              }
             }
-          })
+            .width('100%')
+            .alignItems(VerticalAlign.Center)
+
+            if (this.serverMoreMenuId === item.id) {
+              Column({ space: 2 }) {
+                this.buildServerMoreAction('编辑', () => {
+                  this.editingServer = cloneServerItem(item)
+                  this.serverExpandedId = ''
+                  this.serverMoreMenuId = ''
+                  this.currentPage = AppPage.ServerForm
+                })
+                this.buildServerMoreAction('删除', () => {
+                  this.deleteServer(item.id)
+                  this.serverManageNotice = '已删除服务器：' + item.name + '（Mock）'
+                  this.serverExpandedId = ''
+                  this.serverMoreMenuId = ''
+                }, '#dc2626')
+              }
+              .margin({ top: 8, left: 40 })
+              .padding({ top: 8, bottom: 8 })
+              .width(120)
+              .backgroundColor('#ffffff')
+              .borderRadius(10)
+              .shadow({ radius: 10, color: '#26000000', offsetX: 0, offsetY: 3 })
+              .alignItems(HorizontalAlign.Start)
+            }
+          }
+          .padding(16)
+          .width('100%')
+          .backgroundColor('#ffffff')
+          .borderRadius(12)
+          .shadow({ radius: 6, color: '#12000000', offsetX: 0, offsetY: 2 })
         }, (item: ServerItem) => item.id)
       }
     }
@@ -1350,6 +1545,16 @@ struct Index {
     .borderRadius(12)
   }
 
+  @Builder
+  private buildServerMoreAction(text: string, action: () => void, color: string = '#374151') {
+    Text(text)
+      .fontSize(13)
+      .fontColor(color)
+      .width('100%')
+      .padding({ left: 14, right: 14, top: 10, bottom: 10 })
+      .onClick(() => action())
+  }
+
   private shouldShowSettingsGroup(...items: string[]): boolean {
     for (let i = 0; i < items.length; i++) {
       if (this.matchSettingsKeyword(items[i])) {
@@ -1365,6 +1570,52 @@ struct Index {
       return true
     }
     return text.toLowerCase().indexOf(keyword) >= 0
+  }
+
+  private getFilteredServers(): ServerItem[] {
+    const keyword = this.serverSearchText.trim().toLowerCase()
+    if (keyword.length === 0) {
+      return this.servers
+    }
+    const result: ServerItem[] = []
+    for (let i = 0; i < this.servers.length; i++) {
+      if (this.servers[i].name.toLowerCase().indexOf(keyword) >= 0) {
+        result.push(this.servers[i])
+      }
+    }
+    return result
+  }
+
+  private openServerTerminal(server: ServerItem): void {
+    this.selectedServer = cloneServerItem(server)
+    this.terminalLines = MockTerminalService.createWelcomeLines(server)
+    this.terminalStatusMessage = '在线测试'
+    this.serverExpandedId = ''
+    this.serverMoreMenuId = ''
+    this.currentPage = AppPage.Terminal
+  }
+
+  private openServerSftp(server: ServerItem): void {
+    this.selectedServer = cloneServerItem(server)
+    this.currentSftpPath = '/'
+    this.sftpList = MockSftpService.list('/')
+    this.sftpSelectedPaths = []
+    this.sftpPreviewTitle = '未选择文件'
+    this.sftpPreviewContent = '点击文件后，这里会显示预览内容。'
+    this.sftpNotice = '点击文件夹直接进入，点击文件预览（Mock）'
+    this.serverExpandedId = ''
+    this.serverMoreMenuId = ''
+    this.currentPage = AppPage.Sftp
+  }
+
+  private deleteServer(serverId: string): void {
+    const next: ServerItem[] = []
+    for (let i = 0; i < this.servers.length; i++) {
+      if (this.servers[i].id !== serverId) {
+        next.push(this.servers[i])
+      }
+    }
+    this.servers = next
   }
 
   private toggleSftpSelection(path: string, checked: boolean): void {
